@@ -137,7 +137,10 @@ envelopesRouter.post('/transfer/:from/:to', (req, res, next) => {
   Envelope.update(req.fromEnvelope.id, req.fromEnvelope);
   Envelope.update(req.toEnvelope.id, req.toEnvelope);
 
-  res.send({ message: `Successfully transfered ${value} from envelope #${req.fromEnvelope.id} to envelope #${req.toEnvelope.id}`});
+  res.send({ message: `Successfully transfered ${value} from envelope #${req.fromEnvelope.id} to envelope #${req.toEnvelope.id}`,
+    from: req.fromEnvelope,
+    to: req.toEnvelope
+  });
 });
 
 module.exports = { envelopesRouter };
