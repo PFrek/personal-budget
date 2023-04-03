@@ -41,7 +41,7 @@ const createEnvelope = (envelope) => {
   return findId(envelope.id);
 };
 
-update = (id, newEnvelope) => {
+const update = (id, newEnvelope) => {
   const envelopeIndex = envelopes.findIndex((elem) => {
     return elem.id == id;
   });
@@ -51,6 +51,18 @@ update = (id, newEnvelope) => {
   }
 
   envelopes[envelopeIndex] = newEnvelope;
+};
+
+const remove = (id) => {
+  const envelopeIndex = envelopes.findIndex((elem) => {
+    return elem.id == id;
+  });
+
+  if(envelopeIndex === -1) {
+    throw new Error("Envelope id not found.");
+  }
+
+  envelopes.splice(envelopeIndex, 1);
 }
 
 
@@ -59,4 +71,5 @@ module.exports = {
   createEnvelope,
   findId,
   update,
+  remove
 };

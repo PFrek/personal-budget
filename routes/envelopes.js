@@ -81,4 +81,11 @@ envelopesRouter.put('/:id', (req, res, next) => {
   res.send({ envelope: newEnvelope });
 });
 
+// Delete an envelope
+envelopesRouter.delete('/:id', (req, res, next) => {
+  Envelope.remove(req.foundEnvelope.id);
+
+  res.sendStatus(204);
+});
+
 module.exports = { envelopesRouter };
