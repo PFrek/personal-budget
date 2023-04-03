@@ -9,23 +9,39 @@ envelopesRouter.get('/', (req, res, next) => {
   res.send({ envelopes: envelopes });
 });
 
+// Id Param
+envelopesRouter.param('id', (req, res, next, id) => {
+  const foundEnvelope = Envelope.findId(id);
+
+  if(!foundEnvelope) {
+    return res.sendStatus(404);
+  }
+
+  req.foundEnvelope = foundEnvelope;
+  next();
+});
+
+// Return specific envelope
+envelopesRouter.get('/:id', (req, res, next) => {
+  res.send({ envelope: req.foundEnvelope });
+});
 
 // Validate request body envelope
 const validateBodyEnvelope = (req, res, next) => {
   const envelope = req.body.envelope;
 
   if(!envelope) {
-    return next(new Error("Request body must contain valid envelope object."));
+    res.status(400).send({ message: "Request body must contain valid envelope object." });
   }
 
   const title = envelope.title;
   if(!title || typeof(title) !== "string") {
-    return next(new Error("Request envelope must contain a valid title."));
+    res.status(400).send({ message: "Request envelope must contain a valid title." });
   }
 
   const budget = envelope.budget;
   if(!budget || typeof(budget) !== "number") {
-    return next(new Error("Request envelope must contain a valid budget."));
+    res.status(400).send({ message: "Request envelope must contain a valid budget." });
   }
 
   next();
