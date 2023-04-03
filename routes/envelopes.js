@@ -54,4 +54,31 @@ envelopesRouter.post('/', validateBodyEnvelope, (req, res, next) => {
   res.status(201).send({ envelope: createdEnvelope });
 });
 
+// Update an envelope
+envelopesRouter.put('/:id', (req, res, next) => {  
+  const title = req.body.title;
+
+  if(title && typeof(title) === "string") {
+    req.foundEnvelope.title = title;
+  }
+  
+  const spendingQuery = req.query.spending;
+  let spendingAmount = 0;
+  if(spendingQuery) {
+    spendingAmount = Number.parseFloat(spendingQuery);
+  }
+
+  const newBudget = req.foundEnvelope.budget - spendingAmount;
+  if(newBudget < 0) {
+    return res.status(400).send({ message: "Spending cannot exceed envelope budget." });
+  }
+
+  req.foundEnvelope.budget = newBudget;
+
+  Envelope.update(req.foundEnvelope.id, req.foundEnvelope);
+  
+  const newEnvelope = Envelope.findId(req.foundEnvelope.id);
+  res.send({ envelope: newEnvelope });
+});
+
 module.exports = { envelopesRouter };
