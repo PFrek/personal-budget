@@ -7,6 +7,9 @@ app.use(morgan('dev'));
 
 const PORT = 3000;
 
+const { envelopesRouter } = require('./routes/envelopes');
+app.use('/envelopes', envelopesRouter);
+
 app.get('/', (req, res, next) => {
   res.send("<h1>Hello, World</h1>");
 });
