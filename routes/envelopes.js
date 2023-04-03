@@ -88,4 +88,56 @@ envelopesRouter.delete('/:id', (req, res, next) => {
   res.sendStatus(204);
 });
 
+// From Param
+envelopesRouter.param('from', (req, res, next, fromId) => {
+  const foundEnvelope = Envelope.findId(fromId);
+
+  if(!foundEnvelope) {
+    return res.sendStatus(404);
+  }
+
+  req.fromEnvelope = foundEnvelope;
+  next();
+});
+
+// To Param
+envelopesRouter.param('to', (req, res, next, toId) => {
+  const foundEnvelope = Envelope.findId(toId);
+
+  if(!foundEnvelope) {
+    return res.sendStatus(404);
+  }
+
+  req.toEnvelope = foundEnvelope;
+  next();
+});
+
+
+// Transfer
+envelopesRouter.post('/transfer/:from/:to', (req, res, next) => {
+  if(req.fromEnvelope.id === req.toEnvelope.id) {
+    return res.status(400).send({ message: "Cannot transfer to the same envelope." });
+  }
+
+  const valueQuery = req.query.value;
+  
+  if(!valueQuery) {
+    return res.status(400).send({ message: "Must inform value to be transfered." });
+  }
+
+  const value = Number.parseFloat(valueQuery);
+  
+  if(value > req.fromEnvelope.budget) {
+    return res.status(400).send({ message: "Insuficient budget to conclude transfer." });
+  }
+
+  req.fromEnvelope.budget -= value;
+  req.toEnvelope.budget += value;
+
+  Envelope.update(req.fromEnvelope.id, req.fromEnvelope);
+  Envelope.update(req.toEnvelope.id, req.toEnvelope);
+
+  res.send({ message: `Successfully transfered ${value} from envelope #${req.fromEnvelope.id} to envelope #${req.toEnvelope.id}`});
+});
+
 module.exports = { envelopesRouter };
