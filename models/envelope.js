@@ -1,22 +1,30 @@
-const envelopes = [
-  {
-    id: 1,
-    title: "example envelope",
-    budget: 100,
-  }
-];
-let nextId = envelopes[envelopes.length-1].id+1;
+const Pool = require('pg').Pool;
+const pool = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_DATABASE,
+  password: process.env.DB_PASSWORD,
+  port: 5432
+});
 
 const getAll = () => {
-  return envelopes;
+  return pool.query('SELECT * FROM envelopes ORDER BY id ASC')
+    .then((result) => {
+      return result.rows;
+    })
+    .catch((error) => {
+      throw error;
+  });
 };
 
 const findId = (id) => {
-  const envelope = envelopes.find((elem) => {
-    return elem.id == id;
+  return pool.query('SELECT * FROM envelopes WHERE id = $1', [id])
+    .then((result) => {
+      return result.rows;
+    })
+    .catch((error) => {
+      throw error;
   });
-
-  return envelope;
 };
 
 const createEnvelope = (envelope) => {
@@ -34,35 +42,31 @@ const createEnvelope = (envelope) => {
     throw new Error("Budget of envelope must be a valid number.");
   }
 
-  envelope.id = nextId++;
-
-  envelopes.push(envelope);
-
-  return findId(envelope.id);
+  return pool.query('INSERT INTO envelopes (title, budget) VALUES ($1, $2) RETURNING *', [title, budget])
+    .then((result) => {
+      return result.rows[0];
+    })
+    .catch((error) => {
+      throw error;
+  });
 };
 
 const update = (id, newEnvelope) => {
-  const envelopeIndex = envelopes.findIndex((elem) => {
-    return elem.id == id;
+  return pool.query(
+    'UPDATE envelopes SET title = $1, budget = $2 WHERE id = $3 RETURNING *',
+    [newEnvelope.title, newEnvelope.budget, id]
+  ).then((result) => {
+    return result.rows[0];
+  }).catch((error) => {
+    throw error;
   });
-
-  if(envelopeIndex === -1) {
-    throw new Error("Envelope id not found.");
-  }
-
-  envelopes[envelopeIndex] = newEnvelope;
 };
 
 const remove = (id) => {
-  const envelopeIndex = envelopes.findIndex((elem) => {
-    return elem.id == id;
+  pool.query('DELETE FROM envelopes WHERE id = $1', [id])
+    .catch((error) => {
+      throw error;
   });
-
-  if(envelopeIndex === -1) {
-    throw new Error("Envelope id not found.");
-  }
-
-  envelopes.splice(envelopeIndex, 1);
 }
 
 

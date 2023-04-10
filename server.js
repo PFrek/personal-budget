@@ -2,6 +2,10 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
+// Setup .env db configurations
+require('dotenv').config();
+
+
 const morgan = require('morgan');
 app.use(morgan('dev'));
 

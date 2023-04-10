@@ -1,23 +1,30 @@
-const express = require('express');
-const envelopesRouter = express.Router();
+const Router = require('express-promise-router');
+const envelopesRouter = Router();
 const Envelope = require('../models/envelope');
 
+const currency = require('currency.js');
 
 // Return all envelopes
-envelopesRouter.get('/', (req, res, next) => {
-  const envelopes = Envelope.getAll();
+envelopesRouter.get('/', async (req, res, next) => {
+  const envelopes = await Envelope.getAll();
   res.send({ envelopes: envelopes });
 });
 
 // Id Param
-envelopesRouter.param('id', (req, res, next, id) => {
-  const foundEnvelope = Envelope.findId(id);
+envelopesRouter.param('id', async (req, res, next, id) => {
+  if(!/^-?\d+$/.test(id)) {
+    return res.status(400).send({message: "id parameter must be an integer"});
+  }
 
-  if(!foundEnvelope) {
+  const rows = await Envelope.findId(id);
+
+  if(rows.length === 0) {
     return res.sendStatus(404);
   }
 
-  req.foundEnvelope = foundEnvelope;
+  
+
+  req.foundEnvelope = rows[0];
   next();
 });
 
@@ -48,14 +55,14 @@ const validateBodyEnvelope = (req, res, next) => {
 };
 
 // Create a new envelope
-envelopesRouter.post('/', validateBodyEnvelope, (req, res, next) => {
-  const createdEnvelope = Envelope.createEnvelope(req.body.envelope);
+envelopesRouter.post('/', validateBodyEnvelope, async (req, res, next) => {
+  const createdEnvelope = await Envelope.createEnvelope(req.body.envelope);
 
   res.status(201).send({ envelope: createdEnvelope });
 });
 
 // Update an envelope
-envelopesRouter.put('/:id', (req, res, next) => {  
+envelopesRouter.put('/:id', async (req, res, next) => {  
   const title = req.body.title;
 
   if(title && typeof(title) === "string") {
@@ -65,20 +72,19 @@ envelopesRouter.put('/:id', (req, res, next) => {
   const spendingQuery = req.query.spending;
   let spendingAmount = 0;
   if(spendingQuery) {
-    spendingAmount = Number.parseFloat(spendingQuery);
+    spendingAmount = currency(spendingQuery);
   }
 
-  const newBudget = req.foundEnvelope.budget - spendingAmount;
+  const newBudget = currency(req.foundEnvelope.budget) - spendingAmount;
   if(newBudget < 0) {
     return res.status(400).send({ message: "Spending cannot exceed envelope budget." });
   }
 
   req.foundEnvelope.budget = newBudget;
 
-  Envelope.update(req.foundEnvelope.id, req.foundEnvelope);
+  const updatedEnvelope = await Envelope.update(req.foundEnvelope.id, req.foundEnvelope);
   
-  const newEnvelope = Envelope.findId(req.foundEnvelope.id);
-  res.send({ envelope: newEnvelope });
+  res.send({ envelope: updatedEnvelope });
 });
 
 // Delete an envelope
