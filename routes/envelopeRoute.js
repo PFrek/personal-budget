@@ -22,9 +22,9 @@ envelopeRouter.param('id', async (req, res, next, id) => {
     next();
   }
   catch (error) {
-    console.log();
+    console.log(error);
     res.status(500).send({
-      message: 'An error occurred with id param processing of /envelopes route',
+      message: 'Failed to retrieve an envelope by id.',
       error: error
     });
   }
@@ -48,7 +48,7 @@ const validateBodyEnvelope = (req, res, next) => {
     return res.status(400).send({ message: "Request transaction must contain a valid positive amount." });
   }
 
-  req.reqEnvelope = {
+  req.bodyEnvelope = {
     title: title,
     budget: budget
   };
@@ -63,8 +63,9 @@ envelopeRouter.get('/', async (req, res, next) => {
     res.send({ envelopes: envelopes });
   }
   catch (error) {
+    console.log(error);
     res.status(500).send({
-      message: "Failed to process GET /envelopes route.",
+      message: "Failed to retrieve all envelopes.",
       error: error
     });
   }
@@ -78,12 +79,13 @@ envelopeRouter.get('/:id', (req, res, next) => {
 // Create a new envelope
 envelopeRouter.post('/', validateBodyEnvelope, async (req, res, next) => {
   try {
-    const createdEnvelope = await Envelope.create(req.reqEnvelope);
+    const createdEnvelope = await Envelope.create(req.bodyEnvelope);
     res.status(201).send({ envelope: createdEnvelope });
   } 
   catch (error) {
+    console.log(error);
     res.status(500).send({
-      message: "Failed to process POST /envelopes route.",
+      message: "Failed to create a new envelope.",
       error: error
     });  
   }
@@ -98,7 +100,7 @@ envelopeRouter.put('/:id/spend', async (req, res, next) => {
   }
 
   const newBudget = currency(req.foundEnvelope.budget) - currency(amountQuery);
-  
+
   if (newBudget < 0) {
     return res.status(400).send({ message: "Spending cannot exceed envelope budget." });
   }
@@ -110,7 +112,7 @@ envelopeRouter.put('/:id/spend', async (req, res, next) => {
     res.send({ envelope: updatedEnvelope });
   } catch(error) {
     res.status(500).send({
-      message: "Failed to process PUT /envelopes/:id/spend route.",
+      message: "Failed to spend amount from envelope.",
       error: error
     });
   }
@@ -119,12 +121,12 @@ envelopeRouter.put('/:id/spend', async (req, res, next) => {
 // Update an envelope
 envelopeRouter.put('/:id', validateBodyEnvelope, async (req, res, next) => {
   try {
-    const updatedEnvelope = await Envelope.update(req.foundEnvelope.id, req.reqEnvelope);
+    const updatedEnvelope = await Envelope.update(req.foundEnvelope.id, req.bodyEnvelope);
 
     res.send({ envelope: updatedEnvelope });
   } catch(error) {
     res.status(500).send({
-      message: "Failed to process PUT /envelopes/:id route.",
+      message: "Failed to edit an envelope.",
       error: error
     });
   }
@@ -138,65 +140,10 @@ envelopeRouter.delete('/:id', async (req, res, next) => {
     res.sendStatus(204);
   } catch(error) {
     res.status(500).send({
-      message: "Failed to process DELETE /envelopes/:id route.",
+      message: "Failed to delete an envelope.",
       error: error
     });
   }
 });
-
-// // From Param
-// envelopeRouter.param('from', (req, res, next, fromId) => {
-//   const foundEnvelope = Envelope.findId(fromId);
-
-//   if(!foundEnvelope) {
-//     return res.sendStatus(404);
-//   }
-
-//   req.fromEnvelope = foundEnvelope;
-//   next();
-// });
-
-// // To Param
-// envelopeRouter.param('to', (req, res, next, toId) => {
-//   const foundEnvelope = Envelope.findId(toId);
-
-//   if(!foundEnvelope) {
-//     return res.sendStatus(404);
-//   }
-
-//   req.toEnvelope = foundEnvelope;
-//   next();
-// });
-
-
-// // Transfer
-// envelopeRouter.post('/transfer/:from/:to', (req, res, next) => {
-//   if(req.fromEnvelope.id === req.toEnvelope.id) {
-//     return res.status(400).send({ message: "Cannot transfer to the same envelope." });
-//   }
-
-//   const valueQuery = req.query.value;
-
-//   if(!valueQuery) {
-//     return res.status(400).send({ message: "Must inform value to be transfered." });
-//   }
-
-//   const value = Number.parseFloat(valueQuery);
-
-//   if(value > req.fromEnvelope.budget) {
-//     return res.status(400).send({ message: "Insuficient budget to conclude transfer." });
-//   }
-
-//   req.fromEnvelope.budget -= value;
-//   req.toEnvelope.budget += value;
-
-//   Envelope.update(req.fromEnvelope.id, req.fromEnvelope);
-//   Envelope.update(req.toEnvelope.id, req.toEnvelope);
-
-//   res.send({ message: `Successfully transfered ${value} from envelope #${req.fromEnvelope.id} to envelope #${req.toEnvelope.id}`,
-//     from: req.fromEnvelope,
-//     to: req.toEnvelope
-//   });
-// });
 
 module.exports = { envelopeRouter };
