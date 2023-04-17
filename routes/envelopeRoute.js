@@ -32,7 +32,7 @@ envelopeRouter.param('id', async (req, res, next, id) => {
 
 // Validate request body envelope
 const validateBodyEnvelope = (req, res, next) => {
-  const envelope = req.body;
+  const envelope = req.body.envelope;
 
   if (!envelope) {
     res.status(400).send({ message: "Request body must contain valid envelope object." });
@@ -139,9 +139,10 @@ envelopeRouter.delete('/:id', async (req, res, next) => {
 
     res.sendStatus(204);
   } catch(error) {
+    console.log(error);
     res.status(500).send({
       message: "Failed to delete an envelope.",
-      error: error
+      error: error.message
     });
   }
 });

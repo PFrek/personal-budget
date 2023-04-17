@@ -50,7 +50,7 @@ const remove = async (id) => {
     await pool.query(sql, values);
   }
   catch (error) {
-    throw new Error('An error occurred while running Envelope.remove query.' + error.message, { originalError: error });
+    throw new Error('An error occurred while running Envelope.remove query: ' + error.message, { originalError: error });
   }
 };
 

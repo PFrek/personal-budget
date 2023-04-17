@@ -1,0 +1,431 @@
+openapi: 3.0.3
+info:
+  title: Personal Budget - Envelopes
+  version: 1.0.0
+  description: >-
+    This is an API project from Codecademy. Its main functionality is managing
+    budget envelopes and executing transactions between them. It is implemented
+    using Express.js. [GitHub repo](https://github.com/PFrek/personal-budget).
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+  - url: http://localhost:3000/
+tags:
+  - name: envelopes
+    description: Envelopes for budget management
+  - name: transactions
+    description: Movement of budget allocated between envelopes
+paths:
+  /envelopes:
+    summary: Access and manipulate the budget envelopes
+    description: Endpoint that allows retrieving all envelopes, or creating a new envelope.
+    get:
+      tags:
+        - envelopes
+      summary: Retrieve all of the created envelopes.
+      description: Returns an envelopes array that contains all created envelopes.
+      operationId: getEnvelopes
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelopes'
+    post:
+      tags:
+        - envelopes
+      summary: Create a new envelope.
+      description: Creates a new envelope with an unique ID.
+      operationId: postEnvelopes
+      requestBody:
+        description: The envelope information
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvelopeBody'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '400':
+          description: Invalid request body
+  /envelopes/{id}:
+    summary: Access and manipulate one specific envelope
+    description: Endpoint that allows retriving, editing or deleting one envelope.
+    get:
+      tags:
+        - envelopes
+      summary: Retrieve a single envelope
+      description: >-
+        Searches the database for an envelope with the given ID, and then
+        returns it.
+      operationId: getEnvelopeId
+      parameters:
+        - name: id
+          in: path
+          description: ID of envelope to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Envelope found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '400':
+          description: Invalid ID
+        '404':
+          description: Envelope not found
+    put:
+      tags:
+        - envelopes
+      summary: Edit a single envelope
+      description: >-
+        Searches the database for an envelope with the given ID, and then edits
+        its contents
+      operationId: putEnvelopeId
+      requestBody:
+        description: The envelope information
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvelopeBody'
+      parameters:
+        - name: id
+          in: path
+          description: ID of envelope to be edited
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Envelope edited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '400':
+          description: Invalid ID
+        '404':
+          description: Envelope not found
+    delete:
+      tags:
+        - envelopes
+      summary: Delete a single envelope
+      description: >-
+        Deletes a single envelope identified by ID parameter. Envelopes that
+        have associated transcations logged in the database cannot be deleted.
+      operationId: deleteEnvelopeId
+      parameters:
+        - name: id
+          in: path
+          description: ID of envelope to be deleted
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Succesfully deleted
+        '400':
+          description: Invalid ID
+        '404':
+          description: Envelope not found
+        '500':
+          description: Envelope associated with transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteEnvelopeError'
+  /envelopes/{id}/spend:
+    put:
+      tags:
+        - envelopes
+      summary: Subtract an amount from the envelope budget
+      description: >-
+        Spends a specified amount of money from the envelope budget. Cannot
+        spend more than alloted budget.
+      operationId: putEnvelopeSpend
+      parameters:
+        - name: id
+          in: path
+          description: ID of envelope to spend
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: amount
+          in: query
+          description: Amount to be spent
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Amount spent from envelope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+  /transactions:
+    summary: Access and manipulate all transactions
+    description: CRUD operations on one envelope.
+    get:
+      tags:
+        - transactions
+      summary: Retrieve all transactions
+      description: Retrieve all transactions from the database.
+      operationId: getTransactions
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transactions'
+    post:
+      tags:
+        - transactions
+      summary: Create a new transaction
+      description: Creates a new transaction, exchanging the amount between two envelopes' budgets. Cannot be executed if payer envelope does not have enough budget.
+      operationId: postTransactions
+      requestBody:
+        description: The transaction information
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionBody'
+      responses:
+        '201':
+          description: Transaction created
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Amount exceeds budget
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostTransactionError'
+                
+  /transactions/{id}:
+    summary: Access and manipulate one specific transaction
+    description: Endpoint that allows retriving or deleting one transaction.
+    get:
+      tags:
+        - transactions
+      summary: Retrieve a single transaction
+      description: >-
+        Searches the database for a transaction with the given ID, and then
+        returns it.
+      operationId: getTransactionId
+      parameters:
+        - name: id
+          in: path
+          description: ID of transaction to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Transaction found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: Invalid ID
+        '404':
+          description: Transaction not found
+    delete:
+      tags:
+        - transactions
+      summary: Delete a single transaction
+      description: >-
+        Deletes a single transaction identified by ID parameter. Also reverts the transfer of money between the envelopes.
+      operationId: deleteTransactionId
+      parameters:
+        - name: id
+          in: path
+          description: ID of transaction to be deleted
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Succesfully deleted
+        '400':
+          description: Invalid ID
+        '404':
+          description: Transaction not found
+
+components:
+  schemas:
+    Envelopes:
+      type: object
+      properties:
+        envelopes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+                example: 1
+              title:
+                type: string
+                description: The name of the envelope
+                example: Envelope A
+              budget:
+                type: string
+                description: The amount of money available for the envelope
+                example: $200.00
+    Envelope:
+      type: object
+      properties:
+        envelope:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+              example: 1
+            title:
+              type: string
+              description: The name of the envelope
+              example: Envelope A
+            budget:
+              type: string
+              description: The amount of money available for the envelope
+              example: $200.00
+    EnvelopeBody:
+      type: object
+      properties:
+        envelope:
+          type: object
+          properties:
+            title:
+              type: string
+              description: The name of the envelope
+              example: Envelope A
+            budget:
+              type: string
+              description: The amount of money available for the envelope
+              example: $200.00
+    DeleteEnvelopeError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Failed to delete an envelope.
+        error:
+          type: string
+          example: >-
+            An error occurred while running Envelope.remove query.update or
+            delete on table "envelopes" violates foreign key constraint
+            "transactions_recipient_id_fkey" on table "transactions"
+    Transactions:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+                example: 5
+              timestamp:
+                description: The time of the transaction
+                type: string
+                example: 2023-04-14T20:53:58.444Z
+              amount: 
+                description: The amount of money sent in the transaction.
+                type: string
+                example: $50.00
+              recipient_id:
+                description: The id of the envelope that received the money.
+                type: integer
+                format: int64
+                example: 1
+              payer_id:
+                description: The id of the envelope that sent the money.
+                type: integer
+                format: int64
+                example: 2
+    Transaction:
+      type: object
+      properties:
+        transaction:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+              example: 5
+            timestamp:
+              description: The time of the transaction
+              type: string
+              example: 2023-04-14T20:53:58.444Z
+            amount: 
+              description: The amount of money sent in the transaction.
+              type: string
+              example: $50.00
+            recipient_id:
+              description: The id of the envelope that received the money.
+              type: integer
+              format: int64
+              example: 1
+            payer_id:
+              description: The id of the envelope that sent the money.
+              type: integer
+              format: int64
+              example: 2
+              
+    TransactionBody:
+      type: object
+      properties:
+        transaction:
+          type: object
+          properties:
+            timestamp:
+              description: The time of the transaction
+              type: string
+              example: 2023-04-14T20:53:58.444Z
+            amount: 
+              description: The amount of money sent in the transaction.
+              type: string
+              example: $50.00
+            recipient_id:
+              description: The id of the envelope that received the money.
+              type: integer
+              format: int64
+              example: 1
+            payer_id:
+              description: The id of the envelope that sent the money.
+              type: integer
+              format: int64
+              example: 2
+              
+    PostTransactionError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Insufficient budget in payer envelope.

@@ -105,7 +105,7 @@ transactionRouter.get('/:id', (req, res, next) => {
 transactionRouter.post('/', validateBodyTransaction, async (req, res, next) => {
   // Verify payer has enough budget
   if (currency(req.payer_envelope.budget).intValue < req.bodyTransaction.amount.intValue) {
-    return res.status(400).send({ message: 'Insuficient budget in payer envelope.' });
+    return res.status(400).send({ message: 'Insufficient budget in payer envelope.' });
   }
 
   try {
@@ -133,7 +133,7 @@ transactionRouter.delete('/:id', async (req, res, next) => {
 
     // Verify that the transaction can be reversed
     if (currency(recipient_budget).intValue < req.foundTransaction.amount.intValue) {
-      return res.status(400).send({ message: 'Insuficient budget in recipient envelope to delete transaction.' });
+      return res.status(400).send({ message: 'Insufficient budget in recipient envelope to delete transaction.' });
     }
 
     await Transaction.remove(req.foundTransaction);
